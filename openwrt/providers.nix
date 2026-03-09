@@ -13,7 +13,7 @@ in
       example `dnsmasq`.
 
       This option should only be used when absolutely necessary, as packages
-      installed this way cannot be automatically cleaned up like `packages`.
+      installed this way are not managed declaratively like `packages`.
     '';
     example = ''
       {
@@ -28,22 +28,18 @@ in
       apply = lib.concatStrings (
         [
           ''
-            opkg update
+            apk update
           ''
         ]
         ++ (lib.mapAttrsToList (name: value: ''
           (
             pkg="${name}"
             provider="${value}"
-            if ! opkg status "$provider" 2>/dev/null | grep -e Status: | grep -q installed; then
-              temp="$(mktemp -d)"
-              cd "$temp"
-              opkg download "$pkg" "$provider"
-              cd "$OLDPWD"
-              opkg install "$provider" --cache . || true
-              opkg remove "$pkg"
-              opkg install "$provider" --cache . || opkg install "$pkg" --cache .
-              rm -rf "$temp"
+            if ! apk info | grep -qE "^$provider$"; then
+              apk del "$pkg" 2>/dev/null || true
+              if ! apk add "$provider"; then
+                apk add "$pkg" || true
+              fi
               if [ "$provider" = "dnsmasq-full" ]; then
                 # workaround dnsmasq-full bug when running in lxc
                 # https://forum.openwrt.org/t/multiple-dhcp-dns-server-instances-not-work/130849/11
