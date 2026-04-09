@@ -196,6 +196,12 @@ let
                         --subst-var rollback_timeout \
                         --subst-var reload_service_wait
                       chmod +x "$out"
+
+                      # Lint the fully-expanded script so broken shell in any
+                      # deploy step (e.g. a stray `elif`) fails the build
+                      # instead of the device. The template declares
+                      # `shell=busybox` which matches OpenWRT ash.
+                      ${lib.getExe pkgs.shellcheck} "$out"
                     '';
                 rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
                 reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;

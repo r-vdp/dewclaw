@@ -1,6 +1,9 @@
 #!/bin/ash /etc/rc.common
+# shellcheck shell=busybox
 
+# shellcheck disable=SC2034 # read by /etc/rc.common
 EXTRA_COMMANDS="apply_reboot prepare_reload apply_reload commit yolo"
+# shellcheck disable=SC2034 # read by /etc/rc.common
 START=99
 
 _unregister_script() {
