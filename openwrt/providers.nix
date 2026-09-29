@@ -31,7 +31,14 @@ in
             pkg="${name}"
             provider="${value}"
             if command -v apk >/dev/null; then
-              sed -i "s/^$pkg$/$provider/" /etc/apk/world
+              # The packages step rebuilds world from world.dewclaw on
+              # every deploy. Rename in the baseline too, otherwise the
+              # original package comes back there and gets swapped again.
+              for world in /etc/apk/world /etc/apk/world.dewclaw; do
+                if [ -f "$world" ]; then
+                  sed -i "s/^$pkg$/$provider/" "$world"
+                fi
+              done
             elif ! opkg status "$provider" 2>/dev/null | grep -e Status: | grep -q installed; then
               temp="$(mktemp -d)"
               cd "$temp"
