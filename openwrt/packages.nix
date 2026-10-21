@@ -58,6 +58,24 @@ in
             cp /etc/apk/world /etc/apk/world.dewclaw
           fi
 
+          # A sysupgrade replaces pinned packages like kernel and
+          # base-files, but the baseline keeps the old versions and apk
+          # can no longer satisfy world. Re-pin to what is installed.
+          installed_list=$(apk list --installed | cut -d' ' -f1)
+          while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in
+              *=*)
+                pkg="''${line%%=*}"
+                installed=$(printf '%s\n' "$installed_list" | grep "^$pkg-[0-9]" | head -n 1 || true)
+                if [ -n "$installed" ]; then
+                  line="$pkg=''${installed#"$pkg"-}"
+                fi
+                ;;
+            esac
+            echo "$line"
+          done < /etc/apk/world.dewclaw > /etc/apk/world.dewclaw.tmp
+          mv /etc/apk/world.dewclaw.tmp /etc/apk/world.dewclaw
+
           cp /etc/apk/world.dewclaw /etc/apk/world
           cat <<EOF >> /etc/apk/world
           ${lib.concatStringsSep "\n" config.packages}
